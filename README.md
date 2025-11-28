@@ -1,81 +1,114 @@
-VisionPharmaAI
-# VisionPharma 2025 (CNN) - Guía de Uso Rápida
+# VisionPharma 2025: Sistema de Control de Calidad con IA
 
-Este proyecto utiliza una Red Neuronal Convolucional (YOLOv8) para la inspección de calidad en blísteres farmacéuticos. Sigue estos pasos para configurar y ejecutar el software.
+VisionPharma 2025 es un sistema de visión artificial diseñado para automatizar la inspección de calidad en líneas de producción farmacéutica. Utilizando redes neuronales convolucionales (CNN), el sistema detecta, cuenta y clasifica pastillas y defectos en tiempo real.
 
-# Prerrequisitos
+## Características Principales
 
-Asegúrate de tener instalado lo siguiente antes de comenzar:
+* Inspección en Tiempo Real: Análisis de video en vivo desde cámaras industriales o webcams.
+* Detección con IA: Utiliza el modelo YOLOv8 para identificar pastillas correctas y cavidades vacías con alta precisión.
+* Disparador Automático (Auto-Trigger): El sistema captura y guarda la imagen automáticamente cuando detecta un blíster completo y estable.
+* Persistencia de Datos: Todos los reportes se guardan automáticamente en una base de datos MySQL.
+* Evidencia: Guarda dos imágenes por cada inspección:
+* Dashboard Interactivo: Visualización de estadísticas de producción y calidad.
+* Historial Completo: Acceso a registros pasados con filtrado y visualización de evidencia.
 
-Python 3.11+: Descargar Python
-MySQL Server: Debe estar instalado y ejecutándose.
-Crea una base de datos llamada: visionpharma_db
-Usuario por defecto configurado en el código: root (sin contraseña).
+## Arquitectura Tecnológica
 
-# Instalación y Configuración
+El proyecto sigue una arquitectura modular basada en servicios:
 
-Sigue estos pasos en tu terminal (PowerShell o CMD) dentro de la carpeta del proyecto:
+* Core de IA (cnn_inspector.py): Carga el modelo best.pt y ejecuta la inferencia.
+* Servidor Web (main.py): Gestionado con Flask, sirve la interfaz de usuario y las APIs.
+* Base de Datos (database.py): Singleton que gestiona un pool de conexiones a MySQL.
+* Cámara (camera.py): Sistema thread-safe para la captura de video sin bloqueos.
 
-# 1. Crear el Entorno Virtual (venv)
+## Prerrequisitos
 
-Crea un entorno aislado para instalar las librerías sin afectar tu sistema.
+Antes de iniciar, asegúrate de tener instalado:
 
-# Opción A: Usando el comando python
-python -m venv venv311
+* Python 3.11+
+* MySQL Server (o XAMPP).
+* Una cámara web conectada.
 
-# Opción B: Si tienes múltiples versiones (o Python Launcher)
-py -m venv venv311
+## Instalación y Configuración
 
+Sigue estos pasos para desplegar el proyecto en un entorno local:
 
-# 2. Activar el Entorno Virtual
+### 1. Clonar y Preparar el Entorno
 
-Debes hacer esto cada vez que abras una nueva terminal para trabajar en el proyecto.
+Crear un entorno virtual
 
-# En Windows (PowerShell)
-.\venv311\Scripts\activate
+```python -m venv venv311```
 
-# En Windows (CMD)
-venv311\Scripts\activate
+Activar el entorno
 
+Windows:
 
-(Verás (venv311) al inicio de tu línea de comandos cuando esté activo)
+```.\venv311\Scripts\activate```
 
-# 3. Instalar Dependencias
+Linux/Mac:
 
-Instala todas las librerías necesarias (Flask, OpenCV, YOLO, MySQL, etc.) automáticamente.
-
-pip install -r requirements.txt
-
-
-# 4. Colocar el Modelo de IA
-
-Asegúrate de tener el archivo best.pt (modelo entrenado) en la carpeta raíz del proyecto (junto a app_cnn.py).
-
-# Ejecución del Software
-
-Tienes dos aplicaciones disponibles. Ejecuta solo una a la vez.
-
-# Opción A: Aplicación Principal (Web + BD + Análisis)
-
-Esta es la aplicación completa para producción. Permite subir imágenes para análisis y guarda los reportes en la base de datos MySQL.
-
-python app_cnn.py
+```source venv311/bin/activate```
 
 
-Acceso Web: Abre tu navegador en http://127.0.0.1:5000
+### 2. Instalar Dependencias
 
-# Opción B: Aplicación de Prueba en Vivo (Solo Cámara)
+Instala todas las librerías necesarias (YOLO, Flask, OpenCV, etc.):
 
-Esta aplicación es ligera y sirve exclusivamente para probar la detección en tiempo real con tu cámara web. No guarda datos en la BD.
+```pip install -r requirements.txt```
 
-python app_live.py
 
-Ver Cámara: Abre tu navegador en http://127.0.0.1:5000/live
+### 3. Configurar la Base de Datos
 
-# Solución de Problemas Comunes
+Asegúrate de que tu servicio MySQL esté corriendo.
 
-Error: "ModuleNotFoundError": Asegúrate de haber activado tu entorno virtual (activate) antes de ejecutar python.
+Crea la base de datos:
 
-Error de Conexión a Base de Datos: Verifica que XAMPP o MySQL Server estén corriendo y que la base de datos visionpharma_db exista. Revisa src/core/database.py si tu usuario/contraseña son diferentes.
+```CREATE DATABASE visionpharma_db;```
 
-Error de Cámara: Asegúrate de que ninguna otra aplicación (Zoom, Teams, u otra instancia de Python) esté usando tu cámara web.
+
+(Opcional) Si tu usuario/contraseña de MySQL no es ```root``` / ```""```, edita el archivo ```src/core/database.py``` con tus credenciales.
+
+### 4. Modelo de IA
+
+Asegúrate de que el archivo best.pt (tu modelo entrenado) se encuentre en la carpeta raíz del proyecto.
+
+## Ejecución
+
+Para iniciar el sistema completo:
+
+```python main.py```
+
+
+Abre tu navegador y ve a: http://127.0.0.1:5000/
+
+Selecciona "Captura en Vivo" para iniciar la inspección.
+
+### Estructura del Proyecto
+
+```
+/VisionPharmaAI/
+│
+├── main.py                 # Aplicación Principal (Flask)
+├── best.pt                 # Modelo de IA Entrenado
+├── requirements.txt        # Lista de dependencias
+│
+├── src/
+│   ├── core/               # Lógica de Negocio
+│   │   ├── cnn_inspector.py
+│   │   ├── database.py
+│   │   ├── camera.py
+│   │   └── models.py
+│   │
+│   └── web_interface/      # Frontend
+│       └── templates/
+│           ├── dashboard.html
+│           ├── history.html
+│           ├── index.html
+│           ├── live.html
+│           ├── upload.html
+│
+└── static/                 # Archivos Estáticos
+    ├── img/                # Logos y recursos
+    └── results/            # Evidencia generada
+
+```
