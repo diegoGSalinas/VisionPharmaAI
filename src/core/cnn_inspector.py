@@ -5,87 +5,85 @@ from ultralytics import YOLO
 class CnnInspectionAgent:
     """
     Agente de inspección que utiliza un modelo YOLOv8 entrenado (best.pt)
-    para la detección de objetos (pastillas y cavidades vacías)
+    para la detección de objetos
+    
+    Dibuja los bounding boxes
     """
     
     def __init__(self, model_path='best.pt'):
         """
         Carga el modelo YOLOv8 al instanciar el agente
-        
-        Args:
-            model_path (str): Ruta al archivo .pt (el cerebro de IA)
         """
         try:
             self.model = YOLO(model_path)
-            # Obtiene los nombres de las clases del modelo ('pastilla', 'vacio')
             self.class_names = self.model.names
-            print(f"Modelo '{model_path}' cargado exitosamente.")
-            print(f"Clases detectadas: {self.class_names}")
+            print(f"Modelo '{model_path}' cargado exitosamente")
+            
+            # Definir colores fijos para las clases (BGR para OpenCV)
+            # pastilla (ID 0) para Verde (0, 255, 0)
+            # vacio (ID 1) para Rojo/Azul (255, 0, 0)
+            self.colors = {
+                0: (0, 255, 0),   # Verde pastillas
+                1: (255, 0, 0)    # Azul vacíos
+            }
+            
         except Exception as e:
-            print(f"Error fatal al cargar el modelo YOLO '{model_path}': {e}")
+            print(f"Error al cargar el modelo YOLO '{model_path}': {e}")
             self.model = None
 
     def process_frame_step_by_step(self, frame_original: np.ndarray) -> tuple[np.ndarray, dict, list]:
         """
-        Ejecuta el pipeline de inferencia de IA en un solo frame.
+        Ejecuta la inferencia y dibuja recuadros en el frame
         """
         if self.model is None:
-            print("Error: El modelo no está cargado. No se puede procesar el frame")
-            # Devolver imágenes vacías para evitar que la app web se rompa
-            h, w = frame_original.shape[:2]
-            dummy_img = np.zeros((h, w, 3), dtype=np.uint8)
-            return dummy_img, {'original': dummy_img, 'grayscale': dummy_img, 'thresholded': dummy_img, 'final_contours': dummy_img}, []
+            return frame_original, {'final_contours': frame_original}, []
 
-        step_images = {'original': frame_original.copy()}
+        # Inferencia
+        # verbose=False para no llenar la consola de logs
+        results = self.model.predict(frame_original, conf=0.5, verbose=False)
         
-        # 1. Predicción
-        
-        # La IA ejecuta la detección en el frame original
-        results = self.model.predict(frame_original, conf=0.5) # Confianza mínima del 50%
-        
+        # Copia limpia del frame para dibujar
         frame_final = frame_original.copy()
         formatted_results = []
         
         if not results:
-            print("No se encontraron resultados en la predicción")
-            return frame_final, step_images, formatted_results
+            return frame_final, {'final_contours': frame_final}, formatted_results
 
-        # 2. Procesar y Dibujar Resultados
-        for r in results:
-            boxes = r.boxes
+        # Procesar resultados
+        result = results[0]
+        
+        for box in result.boxes:
+            # Extracción de Datos
+            # Coordenadas del recuadro
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
             
-            # Dibujar los recuadros en la imagen
-            # (Se usa la función 'plot' de ultralytics para mayor velocidad)
-            frame_final = r.plot(show=False) # 'show=False' devuelve la imagen
+            conf = float(box.conf[0])
+            cls_id = int(box.cls[0])
+            class_name = self.class_names.get(cls_id, 'Desconocido')
+            
+            # Dibujo de recuadros
+            color = self.colors.get(cls_id, (255, 255, 255))
+            
+            cv2.rectangle(frame_final, (x1, y1), (x2, y2), color, 2)
+            
+            # Datos para el Reporte
+            formatted_results.append({
+                'id': len(formatted_results) + 1,
+                'area': int((x2 - x1) * (y2 - y1)),
+                'circularity': round(conf, 2),
+                'status': class_name.capitalize()
+            })
 
-            # 3. Formatear para la Tabla de Reportes
-            for box in boxes:
-                # Obtener coordenadas, confianza y ID de clase
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                conf = float(box.conf[0])
-                cls_id = int(box.cls[0])
-                class_name = self.class_names.get(cls_id, 'Desconocido') # Obtener nombre de la clase
-                
-                # Formatear los datos para la tabla del frontend
-                # Nota: 'confianza' en el lugar de 'circularidad'
-                formatted_results.append({
-                    'id': len(formatted_results) + 1,
-                    'area': int((x2 - x1) * (y2 - y1)), # Área del recuadro
-                    'circularity': round(conf, 2), # Mostrar confianza en esta columna
-                    'status': class_name.capitalize() # 'Pastilla' o 'Vacio'
-                })
+        # Preparar salida
+        # Reutilizamos imagen final para todas vistas
+        step_images = {
+            'original': frame_original,
+            'grayscale': cv2.cvtColor(frame_original, cv2.COLOR_BGR2GRAY),
+            'thresholded': frame_final, # Mostrar la imagen limpia con cajas
+            'final_contours': frame_final
+        }
 
-        # 4. Preparar Imágenes de Pasos
-        # El HTML espera 'grayscale' y 'thresholded'
-        step_images['grayscale'] = cv2.cvtColor(frame_original, cv2.COLOR_BGR2GRAY)
-        
-        # Se usa la imagen con los recuadros dibujados como "thresholded"
-        step_images['thresholded'] = cv2.cvtColor(frame_final, cv2.COLOR_BGR2GRAY)
-        
-        step_images['final_contours'] = frame_final # La imagen final con colores
-
-        # Ordenar por estado para que se vea bien en la tabla
+        # Ordenar tabla por estado
         formatted_results.sort(key=lambda x: x['status'])
         
         return frame_final, step_images, formatted_results
-

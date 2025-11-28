@@ -6,7 +6,7 @@ class CameraStream:
     """
     Clase Singleton para manejar la cámara en un hilo separado
     
-    Esto para que Flask (que usa múltiples hilos) pueda 
+    Para que Flask (múltiples hilos) pueda 
     acceder a la cámara sin conflictos
     """
     _instance = None
@@ -19,13 +19,13 @@ class CameraStream:
                     cls._instance = super(CameraStream, cls).__new__(cls)
                     cls._instance.cap = None
                     cls._instance.camera_index = camera_index
-                    cls._instance.frame = None # Frame actual
-                    cls._instance.running = False # Control del hilo
-                    cls._instance.read_lock = threading.Lock() # Lock para acceder al frame
+                    cls._instance.frame = None # frame actual
+                    cls._instance.running = False # control hilo
+                    cls._instance.read_lock = threading.Lock() # accede al frame
         return cls._instance
 
     def _initialize_camera(self):
-        """Intentar la conexión de la cámara"""
+        """Intenta conexión de la cámara"""
         try:
             self.cap = cv2.VideoCapture(self.camera_index)
             if not self.cap.isOpened():
@@ -41,7 +41,7 @@ class CameraStream:
     def _read_loop(self):
         """
         Bucle que se ejecuta en un hilo separado
-        Su trabajo es leer fotogramas de la cámara
+        Su función es leer fotogramas de la cámara
         """
         while self.running:
             if self.cap:
@@ -79,9 +79,8 @@ class CameraStream:
 
     def get_frame(self):
         """
-        Esta función ya no lee de la cámara
-        Simplemente copia el último frame que el hilo guardó
-        (Es rápido y seguro para Flask)
+        Copia el último frame que el hilo guardó
+        (rápido y seguro para Flask)
         """
         frame_copy = None
         with self.read_lock:
