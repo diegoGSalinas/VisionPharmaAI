@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionPharma 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @keyframes float {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .blob { animation: float 15s infinite ease-in-out; }
+    </style>
+</head>
+
+<body class="bg-[#E2ECEC] text-slate-800 min-h-screen flex flex-col items-center justify-center relative selection:bg-cyan-200 selection:text-cyan-900">
+
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="blob absolute top-[-10%] left-[-10%] w-96 h-96 bg-white rounded-full blur-3xl opacity-60"></div>
+        <div class="blob absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-cyan-200 rounded-full blur-3xl opacity-40" style="animation-delay: 2s"></div>
+        <div class="blob absolute top-[40%] left-[40%] w-72 h-72 bg-blue-200 rounded-full blur-3xl opacity-40" style="animation-delay: 4s"></div>
+    </div>
+
+    <div class="container max-w-6xl px-6 relative z-10 w-full">
+        
+        <div class="text-center mb-16 space-y-2">
+            
+            <div class="mx-auto w-80 md:w-96 h-auto flex items-center justify-center mb-6 hover:scale-105 transition-transform duration-500 cursor-default">
+                <img src="{{ url_for('static', filename='img/VisionPharma.png') }}" 
+                     alt="Logo VisionPharma" 
+                     class="w-full h-full object-contain drop-shadow-xl">
+            </div>
+            
+            <p class="text-slate-500 text-lg max-w-2xl mx-auto font-medium tracking-wide">
+                Control de Calidad Inteligente <span class="text-cyan-600 mx-2">|</span> Powered by YOLOv8 AI
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Captura en Vivo -->
+            <a href="{{ url_for('live_page') }}" class="group block p-8 bg-white border border-white/50 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-cyan-200/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-cyan-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                
+                <div class="relative z-10 flex justify-center mb-6">
+                    <div class="p-4 bg-cyan-50 rounded-full group-hover:bg-cyan-100 border border-cyan-100 group-hover:border-cyan-200 transition-all">
+                        <span class="text-4xl group-hover:scale-110 transition-transform duration-300 block text-cyan-600">📹</span>
+                    </div>
+                </div>
+                <h3 class="relative z-10 text-xl font-bold text-slate-800 mb-3 group-hover:text-cyan-700 transition-colors text-center">Captura en Vivo</h3>
+                <p class="relative z-10 text-slate-500 text-sm leading-relaxed text-center">
+                    Inspección en tiempo real con detección automática de defectos
+                </p>
+            </a>
+
+            <!-- Historial -->
+            <a href="{{ url_for('history_page') }}" class="group block p-8 bg-white border border-white/50 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-blue-200/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                <div class="relative z-10 flex justify-center mb-6">
+                    <div class="p-4 bg-blue-50 rounded-full group-hover:bg-blue-100 border border-blue-100 group-hover:border-blue-200 transition-all">
+                        <span class="text-4xl group-hover:scale-110 transition-transform duration-300 block text-blue-600">📂</span>
+                    </div>
+                </div>
+                <h3 class="relative z-10 text-xl font-bold text-slate-800 mb-3 group-hover:text-blue-700 transition-colors text-center">Ver Historial</h3>
+                <p class="relative z-10 text-slate-500 text-sm leading-relaxed text-center">
+                    Consulta de registros pasados y evidencia fotográfica almacenada
+                </p>
+            </a>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('dashboard_page') }}" class="group block p-8 bg-white border border-white/50 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-slate-300/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-slate-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                <div class="relative z-10 flex justify-center mb-6">
+                    <div class="p-4 bg-slate-50 rounded-full group-hover:bg-slate-100 border border-slate-100 group-hover:border-slate-200 transition-all">
+                        <span class="text-4xl group-hover:scale-110 transition-transform duration-300 block text-slate-600">📊</span>
+                    </div>
+                </div>
+                <h3 class="relative z-10 text-xl font-bold text-slate-800 mb-3 group-hover:text-slate-900 transition-colors text-center">Estadísticas</h3>
+                <p class="relative z-10 text-slate-500 text-sm leading-relaxed text-center">
+                    Métricas de rendimiento y tasas de defectos en tiempo real
+                </p>
+            </a>
+
+        </div>
+
+        <div class="text-center mt-16 border-t border-slate-300/50 pt-8">
+            <a href="{{ url_for('upload_page') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-cyan-700 text-xs font-bold uppercase tracking-wider transition-colors py-2 px-4 rounded hover:bg-white/50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Carga Manual de Archivos
+            </a>
+        </div>
+
+    </div>
+
+</body>
+</html>

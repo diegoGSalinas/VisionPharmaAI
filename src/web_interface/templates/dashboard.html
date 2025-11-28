@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Calidad - VisionPharma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-[#E2ECEC] text-slate-800 min-h-screen p-6">
+
+    <!-- Header -->
+    <div class="max-w-7xl mx-auto mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Dashboard de Operaciones</h1>
+            <p class="text-slate-500 text-sm mt-1">Métricas de rendimiento y calidad en tiempo real</p>
+        </div>
+        
+        <div class="flex gap-3">
+            <button onclick="exportDashboardToPDF()" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white transition-colors font-medium py-2 px-4 rounded-lg shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar PDF
+            </button>
+            
+            <a href="{{ url_for('index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-cyan-600 transition-colors font-medium py-2 px-4 rounded-lg hover:bg-white/50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Volver al Inicio
+            </a>
+        </div>
+    </div>
+
+    <!-- Exportar -->
+    <div class="max-w-7xl mx-auto space-y-6" id="dashboardContent">
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6" id="kpiSection">
+
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Inspecciones</p>
+                    <h3 class="text-3xl font-bold text-slate-800">{{ kpis.total_inspections }}</h3>
+                </div>
+                <div class="p-3 bg-blue-50 rounded-full text-blue-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Pastillas Procesadas</p>
+                    <h3 class="text-3xl font-bold text-slate-800">{{ kpis.total_pills }}</h3>
+                </div>
+                <div class="p-3 bg-cyan-50 rounded-full text-cyan-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Blísteres Defectuosos</p>
+                    <h3 class="text-3xl font-bold text-red-600">{{ kpis.total_defects }}</h3>
+                </div>
+                <div class="p-3 bg-red-50 rounded-full text-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Tasa de Calidad</p>
+                    <h3 class="text-3xl font-bold text-emerald-600">{{ kpis.efficiency }}%</h3>
+                </div>
+                <div class="p-3 bg-emerald-50 rounded-full text-emerald-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos Principales -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Donut (Calidad) -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 lg:col-span-1 flex flex-col">
+                <h2 class="font-bold text-slate-800 mb-6 text-lg">Distribución de Calidad</h2>
+                <div class="flex-grow flex items-center justify-center relative" style="min-height: 300px;">
+                    <canvas id="qualityChart"></canvas>
+
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="text-3xl font-bold text-slate-700">{{ kpis.total_inspections }}</span>
+                        <span class="text-xs text-slate-400 font-medium uppercase">Total</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Línea (Pastillas vs Vacíos) -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 lg:col-span-2">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-bold text-slate-800 text-lg">Detección: Pastillas vs Vacíos</h2>
+                    
+                    <!-- Selector de Filtro -->
+                    <div class="flex bg-slate-100 rounded-lg p-1" data-html2canvas-ignore="true">
+                        <a href="{{ url_for('dashboard_page', filter='hour') }}" 
+                           class="px-3 py-1 text-xs font-medium rounded-md transition-all {{ 'bg-white text-slate-800 shadow-sm' if current_filter == 'hour' else 'text-slate-500 hover:text-slate-700' }}">
+                           Por Hora
+                        </a>
+                        <a href="{{ url_for('dashboard_page', filter='day') }}" 
+                           class="px-3 py-1 text-xs font-medium rounded-md transition-all {{ 'bg-white text-slate-800 shadow-sm' if current_filter == 'day' else 'text-slate-500 hover:text-slate-700' }}">
+                           Por Día
+                        </a>
+                    </div>
+                </div>
+                <div style="height: 300px;">
+                    <canvas id="productionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // DATOS DESDE FLASK (Jinja2)
+        const pieData = {{ pie_data | tojson }};
+        const lineData = {{ line_data | tojson }};
+
+        // DONUT CHART
+        const ctxPie = document.getElementById('qualityChart').getContext('2d');
+        const pieChart = new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: ['Aprobado', 'Defectuoso'],
+                datasets: [{
+                    data: [pieData.Aprobado || 0, pieData.Defectuoso || 0],
+                    backgroundColor: ['#10B981', '#EF4444'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+
+        // LINE CHART MULTI-SERIE
+        const ctxLine = document.getElementById('productionChart').getContext('2d');
+        const labels = lineData.map(item => item.fecha);
+        const countsPastillas = lineData.map(item => item.pastillas);
+        const countsVacios = lineData.map(item => item.vacios);
+
+        const lineChart = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Pastillas Detectadas',
+                        data: countsPastillas,
+                        borderColor: '#0EA5E9',
+                        backgroundColor: '#0EA5E9',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'Huecos Vacíos',
+                        data: countsVacios,
+                        borderColor: '#F59E0B',
+                        backgroundColor: '#F59E0B',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+                    x: { grid: { display: false }, border: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8 } }
+                }
+            }
+        });
+
+        // EXPORTACIÓN A PDF
+        async function exportDashboardToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4'); // Orientación vertical, unidades mm, tamaño A4
+
+            // Título
+            doc.setFontSize(20);
+            doc.setTextColor(40);
+            doc.text("Reporte Ejecutivo de Calidad", 14, 22);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 30);
+
+            // Capturar KPIs
+            // html2canvas convierte el div HTML en una imagen
+            const kpiSection = document.getElementById('kpiSection');
+            const kpiCanvas = await html2canvas(kpiSection, { scale: 2 });
+            const kpiImgData = kpiCanvas.toDataURL('image/png');
+            
+            // Ajustar tamaño PDF
+            const kpiWidth = 180;
+            const kpiHeight = (kpiCanvas.height * kpiWidth) / kpiCanvas.width;
+            doc.addImage(kpiImgData, 'PNG', 15, 40, kpiWidth, kpiHeight);
+
+            // Captura Gráfico de Líneas
+            const lineCanvas = document.getElementById('productionChart');
+            const lineImgData = lineCanvas.toDataURL('image/png');
+            const lineY = 40 + kpiHeight + 10;
+            
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("Tendencias de Producción", 14, lineY);
+            doc.addImage(lineImgData, 'PNG', 15, lineY + 5, 180, 80);
+
+            // Capturar Gráfico de Donut
+            const pieCanvas = document.getElementById('qualityChart');
+            const pieImgData = pieCanvas.toDataURL('image/png');
+            const pieY = lineY + 80 + 20;
+            
+            doc.text("Distribución de Calidad", 14, pieY);
+            doc.addImage(pieImgData, 'PNG', 15, pieY + 5, 80, 80);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Total Inspecciones: ${pieData.Aprobado + pieData.Defectuoso}`, 110, pieY + 20);
+            doc.text(`Aprobados: ${pieData.Aprobado}`, 110, pieY + 30);
+            doc.text(`Defectuosos: ${pieData.Defectuoso}`, 110, pieY + 40);
+
+            doc.save('Dashboard_VisionPharma.pdf');
+        }
+    </script>
+
+</body>
+</html>
