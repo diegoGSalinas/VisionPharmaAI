@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historial de Inspecciones - VisionPharma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      .sort-icon::after {
+        content: "↕";
+        font-size: 0.8em;
+        margin-left: 5px;
+        color: #94a3b8;
+      }
+      th.asc .sort-icon::after {
+        content: "▲";
+        color: #0891b2;
+      }
+      th.desc .sort-icon::after {
+        content: "▼";
+        color: #0891b2;
+      }
+    </style>
+  </head>
+  <body class="bg-[#E2ECEC] text-slate-800 min-h-screen p-6">
+    <!-- Header y Navegación -->
+    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">Historial de Calidad</h1>
+        <p class="text-slate-500 text-sm mt-1">
+          Registro completo de inspecciones automáticas y manuales
+        </p>
+      </div>
+      <a
+        href="{{ url_for('index') }}"
+        class="inline-flex items-center gap-2 text-slate-500 hover:text-cyan-600 transition-colors font-medium py-2 px-4 rounded-lg hover:bg-white/50"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
+        </svg>
+        Volver al Inicio
+      </a>
+    </div>
+
+    <!-- Herramientas de Exportación -->
+    <div class="max-w-7xl mx-auto mb-4 flex justify-end gap-3">
+      <div class="relative group">
+        <button
+          class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-md transition-all"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+            />
+          </svg>
+          Exportar Excel
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 opacity-70"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        <div
+          class="absolute right-0 top-full w-48 pt-2 hidden group-hover:block z-20"
+        >
+          <div
+            class="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden"
+          >
+            <button
+              onclick="exportData('excel', 'all')"
+              class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+            >
+              📊 Todo el Historial
+            </button>
+            <button
+              onclick="exportData('excel', 'defect')"
+              class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-red-50 hover:text-red-700 transition-colors border-t border-slate-100"
+            >
+              ⚠️ Solo Defectuosos
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative group">
+        <button
+          class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg shadow-md transition-all"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+            />
+          </svg>
+          Exportar PDF
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 opacity-70"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        <div
+          class="absolute right-0 top-full w-48 pt-2 hidden group-hover:block z-20"
+        >
+          <div
+            class="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden"
+          >
+            <button
+              onclick="exportData('pdf', 'all')"
+              class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              📊 Todo el Historial
+            </button>
+            <button
+              onclick="exportData('pdf', 'defect')"
+              class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-red-50 hover:text-red-700 transition-colors border-t border-slate-100"
+            >
+              ⚠️ Solo Defectuosos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial -->
+    <div
+      class="max-w-7xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden flex flex-col"
+    >
+      <div class="overflow-x-auto flex-grow">
+        <table class="w-full text-sm text-left" id="historyTable">
+          <thead
+            class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200 select-none"
+          >
+            <tr>
+              <th
+                scope="col"
+                class="px-6 py-4 font-semibold cursor-pointer hover:bg-slate-100 transition-colors"
+                onclick="sortTable(0)"
+              >
+                <div class="flex items-center">
+                  ID <span class="sort-icon ml-1"></span>
+                </div>
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-4 font-semibold cursor-pointer hover:bg-slate-100 transition-colors"
+                onclick="sortTable(1)"
+              >
+                <div class="flex items-center">
+                  Fecha y Hora <span class="sort-icon ml-1"></span>
+                </div>
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-4 font-semibold text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                onclick="sortTable(2)"
+              >
+                <div class="flex items-center justify-center">
+                  Pastillas <span class="sort-icon ml-1"></span>
+                </div>
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-4 font-semibold text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                onclick="sortTable(3)"
+              >
+                <div class="flex items-center justify-center">
+                  Vacíos <span class="sort-icon ml-1"></span>
+                </div>
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-4 font-semibold cursor-pointer hover:bg-slate-100 transition-colors"
+                onclick="sortTable(4)"
+              >
+                <div class="flex items-center">
+                  Estado Final <span class="sort-icon ml-1"></span>
+                </div>
+              </th>
+              <th scope="col" class="px-6 py-4 font-semibold text-center">
+                Evidencia
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100" id="tableBody">
+            {% for row in history %}
+
+            <tr
+              class="history-row transition-colors {{ 'bg-red-50/50 hover:bg-red-50' if row.estado_final == 'Defectuoso' else 'hover:bg-slate-50' }}"
+            >
+              <td
+                class="px-6 py-4 font-mono text-slate-400"
+                data-value="{{ row.id }}"
+              >
+                #{{ row.id }}
+              </td>
+              <td
+                class="px-6 py-4 text-slate-700"
+                data-value="{{ row.timestamp }}"
+              >
+                {{ row.timestamp }}
+              </td>
+              <td
+                class="px-6 py-4 text-center"
+                data-value="{{ row.total_pastillas }}"
+              >
+                <span
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold text-xs"
+                >
+                  {{ row.total_pastillas }}
+                </span>
+              </td>
+              <td
+                class="px-6 py-4 text-center"
+                data-value="{{ row.total_vacios }}"
+              >
+                {% if row.total_vacios > 0 %}
+                <span
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-700 font-bold text-xs"
+                >
+                  {{ row.total_vacios }}
+                </span>
+                {% else %}
+                <span class="text-slate-300" data-value="0">-</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4" data-value="{{ row.estado_final }}">
+                {% if row.estado_final == 'Aprobado' %}
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  APROBADO
+                </span>
+                {% else %}
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 animate-pulse"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                  DEFECTUOSO
+                </span>
+                {% endif %}
+              </td>
+
+              <td class="px-6 py-4 text-center">
+                <div class="flex justify-center gap-2">
+                  {% if row.imagen_resultado %}
+                  <button
+                    onclick="showImage('{{ url_for('static', filename=row.imagen_resultado) }}', '{{ row.id }}', 'IA (Detección)')"
+                    class="inline-flex items-center gap-1 px-2 py-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 rounded-md transition-all text-xs font-semibold shadow-sm"
+                    title="Ver con detección"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
+                    </svg>
+                    IA
+                  </button>
+                  {% endif %} {% if row.imagen_resultado_clean %}
+                  <button
+                    onclick="showImage('{{ url_for('static', filename=row.imagen_resultado_clean) }}', '{{ row.id }}', 'Original')"
+                    class="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-slate-50 text-slate-600 border border-slate-300 rounded-md transition-all text-xs font-semibold shadow-sm"
+                    title="Ver original limpia"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Origen
+                  </button>
+                  {% endif %}
+                </div>
+
+                {% if not row.imagen_resultado and not
+                row.imagen_resultado_clean %}
+                <span class="text-xs text-slate-300 italic">No disponible</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% if not history %}
+        <div class="px-6 py-12 text-center text-slate-400 bg-slate-50">
+          <p>No hay registros en la base de datos</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Paginación -->
+      <div
+        class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between"
+        id="paginationControls"
+      >
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-medium" id="pageStart">1</span> a
+          <span class="font-medium" id="pageEnd">12</span> de
+          <span class="font-medium" id="totalItems">0</span> resultados
+        </span>
+        <div class="flex gap-2">
+          <button
+            onclick="prevPage()"
+            id="btnPrev"
+            class="px-3 py-1 border border-slate-300 rounded-md text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <
+          </button>
+          <div id="pageNumbers" class="flex gap-1"></div>
+          <button
+            onclick="nextPage()"
+            id="btnNext"
+            class="px-3 py-1 border border-slate-300 rounded-md text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            >
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Imagen -->
+    <div
+      id="imageModal"
+      class="fixed inset-0 z-50 hidden"
+      aria-labelledby="modal-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity"
+        onclick="closeModal()"
+      ></div>
+      <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div
+          class="flex min-h-full items-center justify-center p-4 text-center sm:p-0"
+        >
+          <div
+            class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-4xl border border-slate-200"
+          >
+            <div
+              class="bg-white px-4 py-4 sm:px-6 border-b border-slate-100 flex justify-between items-center"
+            >
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-cyan-50 rounded-lg text-cyan-600">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3
+                    class="text-base font-bold text-slate-800"
+                    id="modalTitle"
+                  >
+                    Detalle de Inspección
+                  </h3>
+                  <p class="text-xs text-slate-500">Evidencia fotográfica</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onclick="closeModal()"
+                class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div
+              class="bg-slate-900 p-2 flex justify-center items-center min-h-[400px]"
+            >
+              <img
+                id="modalImage"
+                src=""
+                alt="Evidencia"
+                class="max-h-[75vh] w-auto object-contain rounded shadow-lg"
+              />
+            </div>
+            <div class="bg-slate-50 px-4 py-3 sm:px-6 flex justify-end">
+              <button
+                type="button"
+                class="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 sm:w-auto"
+                onclick="closeModal()"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // --- Lógica Modal ---
+      function showImage(url, id, tipo) {
+        document.getElementById("modalImage").src = url;
+        document.getElementById("modalTitle").textContent =
+          "Inspección #" + id + " (" + tipo + ")";
+        document.getElementById("imageModal").classList.remove("hidden");
+      }
+
+      function closeModal() {
+        document.getElementById("imageModal").classList.add("hidden");
+        setTimeout(() => {
+          document.getElementById("modalImage").src = "";
+        }, 200);
+      }
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          closeModal();
+        }
+      });
+
+      // --- Lógica Exportación ---
+      function getFilteredData(filterType) {
+        const data = [];
+        // 'allRows' contiene todas las filas cargadas
+        allRows.forEach((row) => {
+          const id = row.children[0].getAttribute("data-value");
+          const fecha = row.children[1].getAttribute("data-value");
+          const pastillas = row.children[2].getAttribute("data-value");
+          const vacios = row.children[3].getAttribute("data-value");
+          const estado = row.children[4].getAttribute("data-value");
+
+          if (filterType === "defect" && estado !== "Defectuoso") {
+            return;
+          }
+
+          data.push([id, fecha, pastillas, vacios, estado]);
+        });
+        return data;
+      }
+
+      function exportData(format, filterType) {
+        const data = getFilteredData(filterType);
+        const headers = [
+          "ID",
+          "Fecha y Hora",
+          "Pastillas",
+          "Vacíos",
+          "Estado Final",
+        ];
+
+        if (data.length === 0) {
+          alert("No hay datos para exportar con el filtro seleccionado");
+          return;
+        }
+
+        const filename = `Reporte_Calidad_${
+          filterType === "defect" ? "Defectuosos" : "Completo"
+        }_${new Date().toISOString().slice(0, 10)}`;
+
+        if (format === "excel") {
+          // Crear Libro y Hoja
+          const wb = XLSX.utils.book_new();
+          const wsData = [headers, ...data];
+          const ws = XLSX.utils.aoa_to_sheet(wsData);
+          XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+          XLSX.writeFile(wb, `${filename}.xlsx`);
+        } else if (format === "pdf") {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+
+          // Título
+          doc.setFontSize(18);
+          doc.setTextColor(40);
+          doc.text("Reporte de Inspección de Calidad - VisionPharma", 14, 22);
+
+          // Subtítulo y Fecha
+          doc.setFontSize(11);
+          doc.setTextColor(100);
+          doc.text(
+            `Tipo: ${
+              filterType === "defect" ? "Solo Defectuosos" : "Reporte Completo"
+            }`,
+            14,
+            30
+          );
+          doc.text(`Fecha de Emisión: ${new Date().toLocaleString()}`, 14, 36);
+
+          // Tabla
+          doc.autoTable({
+            head: [headers],
+            body: data,
+            startY: 44,
+            theme: "grid",
+            styles: { fontSize: 10, cellPadding: 3 },
+            headStyles: { fillColor: [8, 145, 178] },
+            alternateRowStyles: { fillColor: [241, 245, 249] },
+          });
+
+          doc.save(`${filename}.pdf`);
+        }
+      }
+
+      // Paginación y Ordenación ---
+      const rowsPerPage = 12;
+      const tableBody = document.getElementById("tableBody");
+      let allRows = Array.from(document.querySelectorAll(".history-row"));
+      const totalRows = allRows.length;
+      let currentPage = 1;
+      const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+      let sortState = { column: -1, direction: "" };
+
+      function sortTable(columnIndex) {
+        if (sortState.column === columnIndex) {
+          sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+        } else {
+          sortState.column = columnIndex;
+          sortState.direction =
+            columnIndex === 1 || columnIndex === 0 ? "desc" : "asc";
+        }
+
+        document.querySelectorAll("th").forEach((th, index) => {
+          th.classList.remove("asc", "desc");
+          if (index === columnIndex) {
+            th.classList.add(sortState.direction);
+          }
+        });
+
+        allRows.sort((rowA, rowB) => {
+          let valA = rowA.children[sortState.column].getAttribute("data-value");
+          let valB = rowB.children[sortState.column].getAttribute("data-value");
+
+          // Detección de tipos
+          const isNumeric = !isNaN(parseFloat(valA)) && isFinite(valA);
+
+          if (isNumeric) {
+            valA = parseFloat(valA);
+            valB = parseFloat(valB);
+          } else if (sortState.column === 1) {
+            valA = new Date(valA);
+            valB = new Date(valB);
+          } else {
+            valA = valA.toLowerCase();
+            valB = valB.toLowerCase();
+          }
+
+          if (valA < valB) return sortState.direction === "asc" ? -1 : 1;
+          if (valA > valB) return sortState.direction === "asc" ? 1 : -1;
+          return 0;
+        });
+
+        currentPage = 1;
+        updateTable();
+      }
+
+      function updateTable() {
+        tableBody.innerHTML = "";
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+
+        for (let i = 0; i < totalRows; i++) {
+          if (i >= startIndex && i < endIndex) {
+            allRows[i].style.display = "";
+            tableBody.appendChild(allRows[i]);
+          }
+        }
+
+        // Actualizar UI Paginación
+        document.getElementById("pageStart").textContent =
+          totalRows > 0 ? startIndex + 1 : 0;
+        document.getElementById("pageEnd").textContent = Math.min(
+          endIndex,
+          totalRows
+        );
+        document.getElementById("totalItems").textContent = totalRows;
+        document.getElementById("btnPrev").disabled = currentPage === 1;
+        document.getElementById("btnNext").disabled =
+          currentPage === totalPages || totalPages === 0;
+
+        renderPageNumbers();
+      }
+
+      function prevPage() {
+        if (currentPage > 1) {
+          currentPage--;
+          updateTable();
+        }
+      }
+      function nextPage() {
+        if (currentPage < totalPages) {
+          currentPage++;
+          updateTable();
+        }
+      }
+      function goToPage(page) {
+        currentPage = page;
+        updateTable();
+      }
+
+      function renderPageNumbers() {
+        const container = document.getElementById("pageNumbers");
+        container.innerHTML = "";
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement("button");
+          btn.textContent = i;
+          btn.onclick = () => goToPage(i);
+          btn.className =
+            "px-3 py-1 border rounded-md text-sm font-medium transition-colors " +
+            (i === currentPage
+              ? "bg-cyan-50 border-cyan-500 text-cyan-700 z-10 ring-1 ring-cyan-500"
+              : "bg-white border-slate-300 text-slate-500 hover:bg-slate-50");
+          container.appendChild(btn);
+        }
+      }
+
+      sortTable(0);
+    </script>
+  </body>
+</html>
